@@ -62,9 +62,9 @@ jobs:
       run: |
         aws eks update-kubeconfig --name githubcluster --region ${{ vars.AWS_REGION }}
 
-    - name: Create Namespace
-      run: |
-        kubectl create namespace dev
+    # - name: Create Namespace
+    #   run: |
+    #     kubectl create namespace dev
 
     - name: Deploy to EKS
       run: |
