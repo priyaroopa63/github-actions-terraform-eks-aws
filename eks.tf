@@ -7,7 +7,7 @@ module "eks" {
   cluster_version                = var.eks_cluster_version
   cluster_endpoint_public_access = var.cluster_endpoint_public_access
   vpc_id                         = module.vpc.vpc_id
-  subnet_ids                     = module.vpc.private_subnets
+  subnet_ids                     = module.vpc.public_subnets
   authentication_mode            = "API_AND_CONFIG_MAP"
   access_entries                 = var.access_entries
 
