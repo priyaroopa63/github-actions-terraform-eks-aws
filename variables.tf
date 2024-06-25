@@ -92,7 +92,7 @@ variable "create_vpc" {
 }
 variable "vpc_name" {
   type = string
-  default = ""
+  default = "demo-vpc"
 }
  
 variable "vpc_cidr" {
