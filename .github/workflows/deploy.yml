@@ -1,122 +1,169 @@
-# name: Terraform CI/CD
+name: Deploy Sample Application to EKS
 
-# on:
-#   push:
-#     branches:
-#       - main
-#   pull_request:
-#     branches:
-#       - main
-
-# jobs:
-#   terraform:
-#     name: 'Terraform Lint, Security Check, and Deploy'
-#     runs-on: ubuntu-latest
-
-#     env:
-#       AWS_REGION: 'us-east-1'
-#       TF_VERSION: '1.4.0'
-#       TFLINT_VERSION: '0.46.1'  # Updated to a more recent version
-#       TFSEC_VERSION: '1.28.1'   # Updated to a more recent version
-
-#     steps:
-#     - name: 'Checkout GitHub repository'
-#       uses: actions/checkout@v2
-
-#     - name: 'Configure AWS credentials'
-#       uses: aws-actions/configure-aws-credentials@v1
-#       with:
-#         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#         aws-region: ${{ env.AWS_REGION }}
-
-#     - name: 'Set up Terraform'
-#       uses: hashicorp/setup-terraform@v1
-#       with:
-#         terraform_version: ${{ env.TF_VERSION }}
-
-#     - name: 'Install TFLint'
-#       run: |
-#         curl -sLo tflint.zip https://github.com/terraform-linters/tflint/releases/download/v${{ env.TFLINT_VERSION }}/tflint_linux_amd64.zip
-#         unzip tflint.zip -d /usr/local/bin/
-#         tflint --version
-
-#     - name: 'Install tfsec'
-#       run: |
-#         curl -sLo tfsec https://github.com/aquasecurity/tfsec/releases/download/v${{ env.TFSEC_VERSION }}/tfsec-linux-amd64
-#         chmod +x tfsec
-#         mv tfsec /usr/local/bin/
-#         tfsec --version
-
-#     - name: 'Terraform Init'
-#       run: terraform init
-
-#     - name: 'Terraform Format'
-#       run: terraform fmt
-
-#     - name: 'Terraform Validate'
-#       run: terraform validate
-
-#     - name: 'TFLint'
-#       run: |
-#         tflint --init
-#         tflint
-
-#     - name: 'tfsec'
-#       run: tfsec .
-
-#     - name: 'Terraform Plan'
-#       run: terraform plan -out=tfplan
-
-#     - name: 'Terraform Apply'
-#       if: github.ref == 'refs/heads/main'
-#       run: terraform apply -auto-approve tfplan
-
-
-name: Node js app deploy to EKS
 on:
+  workflow_dispatch:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
 
-    - name: Install kubectl
-      uses: azure/setup-kubectl@v2.0
-      with:
-        version: 'v1.24.0' # default is latest stable
-      id: install
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
 
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-2
+        aws-region: ${{ vars.AWS_REGION }}
 
-    - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
-
-    - name: Build, tag, and push docker image to Amazon ECR
-      env:
-        REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        REPOSITORY: EKSTestingimage
-        IMAGE_TAG: latest
+    - name: Login to ECR
       run: |
-        docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
-        docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+        aws ecr get-login-password --region ${{ vars.AWS_REGION }} | docker login --username AWS --password-stdin ${{ vars.ECR_REPO }}
 
-    - name: Update kube config
-      run: aws eks update-kubeconfig --name EKSTesting
-    
+    - name: Build and Push Docker Image
+      run: |
+        docker build -t eks-deployment:latest .
+        docker tag eks-deployment:latest ${{ vars.ECR_REPO }}/eks-deployment:latest
+        docker push ${{ vars.ECR_REPO }}/eks-deployment:latest
+
+    - name: Setup kubectl
+      uses: actions/setup-kubectl@v1
+      with:
+        version: 'latest'
+
+    - name: Update kubeconfig
+      run: |
+        aws eks update-kubeconfig --name ${{ vars.EKS_CLUSTER_NAME }} --region ${{ vars.AWS_REGION }}
+
     - name: Deploy to EKS
       run: |
-        kubectl apply -f deployment.yaml
-        kubectl apply -f service.yaml
+        kubectl apply -f eks-deploy.yml
+        kubectl apply -f eks-svc.yml
+
+
+
+# # name: Terraform CI/CD
+
+# # on:
+# #   push:
+# #     branches:
+# #       - main
+# #   pull_request:
+# #     branches:
+# #       - main
+
+# # jobs:
+# #   terraform:
+# #     name: 'Terraform Lint, Security Check, and Deploy'
+# #     runs-on: ubuntu-latest
+
+# #     env:
+# #       AWS_REGION: 'us-east-1'
+# #       TF_VERSION: '1.4.0'
+# #       TFLINT_VERSION: '0.46.1'  # Updated to a more recent version
+# #       TFSEC_VERSION: '1.28.1'   # Updated to a more recent version
+
+# #     steps:
+# #     - name: 'Checkout GitHub repository'
+# #       uses: actions/checkout@v2
+
+# #     - name: 'Configure AWS credentials'
+# #       uses: aws-actions/configure-aws-credentials@v1
+# #       with:
+# #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+# #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+# #         aws-region: ${{ env.AWS_REGION }}
+
+# #     - name: 'Set up Terraform'
+# #       uses: hashicorp/setup-terraform@v1
+# #       with:
+# #         terraform_version: ${{ env.TF_VERSION }}
+
+# #     - name: 'Install TFLint'
+# #       run: |
+# #         curl -sLo tflint.zip https://github.com/terraform-linters/tflint/releases/download/v${{ env.TFLINT_VERSION }}/tflint_linux_amd64.zip
+# #         unzip tflint.zip -d /usr/local/bin/
+# #         tflint --version
+
+# #     - name: 'Install tfsec'
+# #       run: |
+# #         curl -sLo tfsec https://github.com/aquasecurity/tfsec/releases/download/v${{ env.TFSEC_VERSION }}/tfsec-linux-amd64
+# #         chmod +x tfsec
+# #         mv tfsec /usr/local/bin/
+# #         tfsec --version
+
+# #     - name: 'Terraform Init'
+# #       run: terraform init
+
+# #     - name: 'Terraform Format'
+# #       run: terraform fmt
+
+# #     - name: 'Terraform Validate'
+# #       run: terraform validate
+
+# #     - name: 'TFLint'
+# #       run: |
+# #         tflint --init
+# #         tflint
+
+# #     - name: 'tfsec'
+# #       run: tfsec .
+
+# #     - name: 'Terraform Plan'
+# #       run: terraform plan -out=tfplan
+
+# #     - name: 'Terraform Apply'
+# #       if: github.ref == 'refs/heads/main'
+# #       run: terraform apply -auto-approve tfplan
+
+
+# name: Node js app deploy to EKS
+# on:
+#   push:
+#     branches: [ "main" ]
+
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+#     steps:
+#     - name: Checkout code
+#       uses: actions/checkout@v3
+
+#     - name: Install kubectl
+#       uses: azure/setup-kubectl@v2.0
+#       with:
+#         version: 'v1.24.0' # default is latest stable
+#       id: install
+
+#     - name: Configure AWS Credentials
+#       uses: aws-actions/configure-aws-credentials@v1
+#       with:
+#         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#         aws-region: us-east-2
+
+#     - name: Login to Amazon ECR
+#       id: login-ecr
+#       uses: aws-actions/amazon-ecr-login@v1
+
+#     - name: Build, tag, and push docker image to Amazon ECR
+#       env:
+#         REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+#         REPOSITORY: EKSTestingimage
+#         IMAGE_TAG: latest
+#       run: |
+#         docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+#         docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+
+#     - name: Update kube config
+#       run: aws eks update-kubeconfig --name EKSTesting
+    
+#     - name: Deploy to EKS
+#       run: |
+#         kubectl apply -f deployment.yaml
+#         kubectl apply -f service.yaml

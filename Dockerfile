@@ -1,16 +1,11 @@
-# Use the Red Hat Universal Base Image (UBI) as the base image
-FROM registry.access.redhat.com/ubi8/ubi:latest
+FROM node:14-alpine
 
-# Update the system and install necessary packages
-RUN yum update -y && \
-    yum install -y httpd && \
-    yum clean all
+WORKDIR /usr/src/app
 
-# Copy your website files into the container
-COPY index.html /var/www/html/index.html
+COPY . .
 
-# Expose port 80
-EXPOSE 80
+RUN npm install
 
-# Start Apache in the foreground
-CMD ["httpd", "-D", "FOREGROUND"]
+EXPOSE 8080
+
+CMD ["node","server.js"]
