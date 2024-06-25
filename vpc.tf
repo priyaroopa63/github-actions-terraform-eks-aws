@@ -30,7 +30,7 @@ module "vpc" {
   # reference: https://registry.terraform.io/modules/terraform-aws-modules/vpc/aws/2.44.0#nat-gateway-scenarios
   enable_nat_gateway          = var.enable_nat_gateway
   single_nat_gateway          = var.single_nat_gateway  
-  one_nat_gateway_per_az      = var.one_nat_gateway_per_az
+# one_nat_gateway_per_az      = var.one_nat_gateway_per_az
   enable_dns_hostnames        = var.enable_dns_hostnames
   reuse_nat_ips               = var.reuse_nat_ips
   external_nat_ip_ids         = [aws_eip.nat_gw_elastic_ip.id]

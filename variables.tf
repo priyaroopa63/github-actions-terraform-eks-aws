@@ -122,10 +122,10 @@ variable "single_nat_gateway" {
   type = bool
   default = true
 }
-variable "one_nat_gateway_per_az" {
-  type = bool
-  default = true
-}
+# variable "one_nat_gateway_per_az" {
+#   type = bool
+#   default = true
+# }
  
 variable "enable_dns_hostnames" {
   type= bool
