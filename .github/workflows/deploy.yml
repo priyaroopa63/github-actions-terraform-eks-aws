@@ -39,13 +39,13 @@ jobs:
 
     - name: Login to ECR
       run: |
-        aws ecr get-login-password --region ${{ vars.AWS_REGION }} | docker login --username AWS --password-stdin ${{ vars.ECR_REPO }}
+        aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 264852106485.dkr.ecr.us-east-1.amazonaws.com
 
     - name: Build and Push Docker Image
       run: |
-        docker build -t eks-deployment:latest .
-        docker tag eks-deployment:latest ${{ vars.ECR_REPO }}/eks-deployment:latest
-        docker push ${{ vars.ECR_REPO }}/eks-deployment:latest
+        docker build -t ecr-repo:latest .
+        docker tag ecr-repo:latest 264852106485.dkr.ecr.us-east-1.amazonaws.com/ecr-repo:latest
+        docker push 264852106485.dkr.ecr.us-east-1.amazonaws.com/ecr-repo:latest
 
     - name: Setup kubectl
       uses: azure/setup-kubectl@v1
@@ -54,12 +54,12 @@ jobs:
 
     - name: Update kubeconfig
       run: |
-        aws eks update-kubeconfig --name ${{ vars.EKS_CLUSTER_NAME }} --region ${{ vars.AWS_REGION }}
+        aws eks update-kubeconfig --name githubcluster --region ${{ vars.AWS_REGION }}
 
     - name: Deploy to EKS
       run: |
-        kubectl apply -f eks-deploy.yml
-        kubectl apply -f eks-svc.yml
+        kubectl apply -f eks-deployment.yml
+        kubectl apply -f service.yml
 
 
 
