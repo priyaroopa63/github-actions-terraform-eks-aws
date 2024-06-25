@@ -34,6 +34,7 @@ module "vpc" {
   enable_dns_hostnames        = var.enable_dns_hostnames
   reuse_nat_ips               = var.reuse_nat_ips
   external_nat_ip_ids         = [aws_eip.nat_gw_elastic_ip.id]
+  map_public_ip_on_launch     = true
  
   # add VPC/Subnet tags required by EKS
   tags = merge(tomap({
