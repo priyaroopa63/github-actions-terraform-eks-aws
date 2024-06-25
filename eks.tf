@@ -135,3 +135,15 @@ module "ebs_csi_driver_irsa" {
   tags = local.tags
 }
 
+
+data "aws_eks_cluster" "example" {
+  name = "githubcluster"  # Replace with your cluster name
+}
+
+data "aws_eks_cluster_auth" "example" {
+  name = data.aws_eks_cluster.example.name
+}
+
+output "eks_token" {
+  value = data.aws_eks_cluster_auth.example.token
+}
