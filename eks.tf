@@ -94,7 +94,7 @@ module "eks" {
     core_node_group = {
       name           = var.node_group_name
       description    = "EKS Core node group for hosting critical add-ons"
-      subnet_ids     = module.vpc.private_subnets
+      subnet_ids     = module.vpc.public_subnets
       min_size       = var.eks_node_min_size
       max_size       = var.eks_node_max_size
       desired_size   = var.eks_node_desired_size
@@ -136,14 +136,14 @@ module "ebs_csi_driver_irsa" {
 }
 
 
-data "aws_eks_cluster" "example" {
-  name = "githubcluster"  # Replace with your cluster name
-}
+# data "aws_eks_cluster" "example" {
+#   name = "githubcluster"  # Replace with your cluster name
+# }
 
-data "aws_eks_cluster_auth" "example" {
-  name = data.aws_eks_cluster.example.name
-}
+# data "aws_eks_cluster_auth" "example" {
+#   name = data.aws_eks_cluster.example.name
+# }
 
-output "eks_token" {
-  value = data.aws_eks_cluster_auth.example.token
-}
+# output "eks_token" {
+#   value = data.aws_eks_cluster_auth.example.token
+# }
